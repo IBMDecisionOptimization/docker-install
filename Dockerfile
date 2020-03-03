@@ -1,6 +1,9 @@
 # Dockerfile to install CPLEX into a container.
 # Based on Python containers so that CPLEX Python connectors can be used.
 
+FROM python:${CPX_PYVERSION}
+MAINTAINER daniel.junglas@de.ibm.com
+
 # Where to install (this is also specified in install.properties)
 ARG COSDIR=/opt/CPLEX
 
@@ -12,9 +15,6 @@ ARG CPX_PYVERSION=3.7
 ARG CPX_KEEP_IDE=FALSE
 ARG CPX_KEEP_DOC=FALSE
 ARG CPX_KEEP_EXAMPLES=FALSE
-
-FROM python:${CPX_PYVERSION}
-MAINTAINER daniel.junglas@de.ibm.com
 
 # Copy installer and installer arguments from local disk
 COPY cos_installer-*.bin /tmp/installer
