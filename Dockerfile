@@ -1,7 +1,10 @@
 # Dockerfile to install CPLEX into a container.
 # Based on Python containers so that CPLEX Python connectors can be used.
 
-FROM python:${CPX_PYVERSION}
+# NOTE: Starting with docker 17.05 (https://github.com/moby/moby/pull/31352)
+# we could specify the version as ${CPX_PYVERSION}. For now we hardcode so
+# that things work with older versions of Docker as well.
+FROM python:3.7
 MAINTAINER daniel.junglas@de.ibm.com
 
 # Where to install (this is also specified in install.properties)
@@ -22,16 +25,15 @@ COPY install.properties /tmp/install.properties
 RUN chmod u+x /tmp/installer
 
 # Install Java runtime. This is required by the installer
-RUN apt-get update
-RUN apt-get install -y default-jre
+RUN apt-get update && apt-get install -y default-jre
 
 # Install COS
 RUN /tmp/installer -f /tmp/install.properties
 
 # Remove installer, temporary files, and the JRE we installed
 RUN rm -f /tmp/installer /tmp/install.properties
-RUN apt-get remove -y --purge default-jre
-RUN apt-get -y --purge autoremove
+RUN apt-get remove -y --purge default-jre && apt-get -y --purge autoremove
+
 RUN if [ "${CPX_KEEP_}" != TRUE ]; then rm -rf ${COSDIR}/opl/oplide; fi
 RUN if [ "${CPX_KEEP_DOC}" != TRUE ]; then rm -rf ${COSDIR}/doc; fi
 RUN if [ "${CPX_KEEP_EXAMPLES}" != TRUE ]; then rm -rf ${COSDIR}/*/examples; fi
@@ -48,6 +50,11 @@ ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${COSDIR}/opl/bin/x86-64_linux
 
 # Setup Python
 ENV PYTHONPATH ${PYTHONPATH}:${COSDIR}/cplex/python/${CPX_PYVERSION}/x86-64_linux
+
+RUN cd ${COSDIR}/python && \
+	python${CPX_PYVERSION} setup.py install
+
+ENV CPX_PYVERSION ${CPX_PYVERSION}
 
 # Default user is cplex
 RUN adduser --disabled-password --gecos "" cplex 
